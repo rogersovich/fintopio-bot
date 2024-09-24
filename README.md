@@ -33,7 +33,7 @@ Follow these steps to get the Fintopio Automation Tool up and running:
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/Galkurta/Fintopio-BOT.git
+   git clone https://github.com/rogersovich/fintopio-bot
    cd Fintopio-BOT
    ```
 
@@ -47,11 +47,12 @@ Follow these steps to get the Fintopio Automation Tool up and running:
 
 3. **Set up your accounts**
 
-   Edit`data.txt`. Add your Fintopio account data, one per line, in the following format:
+   Edit`accounts.json`. Add your Fintopio account data, one per line, in the following format:
 
    ```
-   user=
-   query_id=
+   {
+      "Your name": "query_id"
+   }
    ```
 
    Make sure to replace the values with your actual Fintopio account data.
