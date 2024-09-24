@@ -2,6 +2,8 @@
 
 Welcome to the Fintopio Automation Tool! This colorful and efficient Node.js application helps you manage multiple Fintopio accounts with ease. Automate daily check-ins, farming operations, and more with this user-friendly tool.
 
+![Fintopio Bot](./assets/fintopio-banner.jpg)
+
 ## ✨ Features
 
 - 🔐 Secure authentication for multiple accounts
