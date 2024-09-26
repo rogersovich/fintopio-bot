@@ -4,6 +4,10 @@ const axios = require("axios");
 const colors = require("colors");
 const readline = require("readline");
 const { DateTime } = require("luxon");
+const { HttpsProxyAgent } = require("https-proxy-agent");
+const { proxyList } = require("./config/proxy.js");
+const logger = require('./utils/logger.js');
+
 
 class Fintopio {
   constructor() {
@@ -20,6 +24,61 @@ class Fintopio {
       "User-Agent":
         "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Mobile Safari/537.36",
     };
+    this.proxy = null
+    this.axios_api = axios.create();
+
+    // Interceptor untuk logging request
+    this.axios_api.interceptors.request.use(
+      async (config) => {
+        let ip;
+        const method = config.method.toUpperCase();
+        const url = config.url;
+    
+        // Mengecek apakah proxy digunakan di dalam config
+        if (this.proxy) {
+          // Gunakan proxy
+          const httpsAgent = new HttpsProxyAgent(this.proxy);
+          config.httpsAgent = httpsAgent;
+          try {
+            ip = await this.checkIP(); // Memanggil fungsi untuk mendapatkan original dan proxy IP
+            logger.info(
+              `${method} : ${url} (Requester : Original IP : ${ip[0]} : Proxy IP ${ip[1]})`
+            );
+          } catch (error) {
+            logger.error(`Failed to fetch IPs: ${error.message}`);
+          }
+        } else {
+          logger.info(`${method} : ${url} (No proxy used)`);
+        }
+    
+        if (config.data) {
+          logger.debug(`Request data: ${JSON.stringify(config.data)}`);
+        }
+    
+        return config;
+      },
+      (error) => {
+        logger.error(`Request error: ${error.message}`);
+        return Promise.reject(error);
+      }
+    );
+
+    // Interceptor untuk logging response
+    this.axios_api.interceptors.response.use(
+      (response) => {
+        logger.debug(`Response status: ${response.status}, data: ${JSON.stringify(response.data)}`);
+        return response;
+      },
+      (error) => {
+        if (error.response) {
+          logger.error(`Response error from ${error.response.config.url}: ${error.message}`);
+          logger.debug(`Response status: ${error.response.status}, data: ${JSON.stringify(error.response.data)}`);
+        } else {
+          logger.error(`Request failed: ${error.message}`);
+        }
+        return Promise.reject(error);
+      }
+    );
   }
 
   log(msg, color = "white", type = "INFO") {
@@ -54,12 +113,43 @@ class Fintopio {
     console.log("");
   }
 
+  async checkIP() {
+    const options = {};
+    
+    if (this.proxy) {
+      let originalIp;
+      let proxyIp;
+      try {
+        // Fetch IP tanpa proxy
+        const res = await axios.get("https://api.ipify.org?format=json");
+        originalIp = res.data.ip;
+      } catch (error) {
+        throw Error(`Failed to fetch original IP: ${error.message}`);
+      }
+  
+      // Gunakan proxy
+      const httpsAgent = new HttpsProxyAgent(this.proxy);
+      
+      try {
+        const res = await axios.get("https://api.ipify.org?format=json", { httpsAgent });
+        proxyIp = res.data.ip;
+      } catch (error) {
+        throw Error(`Failed to fetch proxy IP: ${error.message}`);
+      }
+  
+      return [originalIp, proxyIp];
+    }
+  }
+
+
   async auth(userData) {
     const url = `${this.baseUrl}/auth/telegram`;
     const headers = { ...this.headers, Webapp: "true" };
 
     try {
-      const response = await axios.get(`${url}?${userData}`, { headers });
+      const response = await this.axios_api.get(`${url}?${userData}`, { 
+        headers,
+      });
       return response.data.token;
     } catch (error) {
       this.log(`Authentication error: ${error.message}`, "red");
@@ -318,11 +408,25 @@ class Fintopio {
 
       let firstAccountFinishTime = null;
 
+      if (proxyList.length > 0) {
+        if (accountsArray.length != proxyList.length) {
+          reject(
+            `You have ${accountsArray.length} Session but you provide ${proxyList.length} Proxy`
+          );
+        }
+      }
+
       for (let i = 0; i < accountsArray.length; i++) {
         const userData = accountsArray[i];
+
+        const proxy = proxyList.length > 0 ? proxyList[i] : undefined;
+        this.proxy = proxy;
+
         const first_name = this.extractFirstName(userData);
         console.log(`[ Account ${i + 1} | ${first_name} ]`.yellow);
+
         const token = await this.auth(userData);
+        
         if (token) {
           this.log(`Login successful!`, "green");
           const profile = await this.getProfile(token);
@@ -430,8 +534,12 @@ class Fintopio {
 }
 
 if (require.main === module) {
+  logger.info("");
+  logger.clear();
+  logger.info("Application Started");
   const fintopio = new Fintopio();
   fintopio.main().catch((err) => {
+    logger.info(`Application Error : ${err}`);
     console.error(err);
     process.exit(1);
   });

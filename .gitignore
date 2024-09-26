@@ -1,3 +1,5 @@
 node_modules
 package-lock.json
 accounts.json
+config/proxy.js
+log/app.log
