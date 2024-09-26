@@ -166,7 +166,7 @@ class Fintopio {
     };
 
     try {
-      const response = await axios.get(url, { headers });
+      const response = await this.axios_api.get(url, { headers });
       return response.data;
     } catch (error) {
       this.log(`Error fetching profile: ${error.message}`, "red");
@@ -183,7 +183,7 @@ class Fintopio {
     };
 
     try {
-      await axios.post(url, {}, { headers });
+      await this.axios_api.post(url, {}, { headers });
       this.log("Daily check-in successful!", "green");
     } catch (error) {
       this.log(`Daily check-in error: ${error.message}`, "red");
@@ -199,7 +199,7 @@ class Fintopio {
 
     const fetchFarmingState = async (retryCount = 0) => {
       try {
-        const response = await axios.get(url, { headers });
+        const response = await this.axios_api.get(url, { headers });
         return response.data;
       } catch (error) {
         if (error.message.includes("500") && retryCount < 3) {
@@ -224,7 +224,7 @@ class Fintopio {
 
     const startFarmingRequest = async (retryCount = 0) => {
       try {
-        const response = await axios.post(url, {}, { headers });
+        const response = await this.axios_api.post(url, {}, { headers });
         const finishTimestamp = response.data.timings.finish;
 
         if (finishTimestamp) {
@@ -257,7 +257,7 @@ class Fintopio {
     };
 
     try {
-      await axios.post(url, {}, { headers });
+      await this.axios_api.post(url, {}, { headers });
       this.log("Farm claimed successfully!", "green");
     } catch (error) {
       if (error.message.includes("500") && retryCount < 3) {
@@ -277,7 +277,7 @@ class Fintopio {
     };
 
     try {
-      const response = await axios.get(url, { headers });
+      const response = await this.axios_api.get(url, { headers });
       if (response.data && response.data.state) {
         return response.data;
       } else {
@@ -300,7 +300,7 @@ class Fintopio {
     const payload = { diamondNumber: diamondNumber };
 
     try {
-      await axios.post(url, payload, { headers });
+      await this.axios_api.post(url, payload, { headers });
       this.log(`Success claim ${totalReward} diamonds!`, "green");
     } catch (error) {
       if (error.message.includes("500") && retryCount < 3) {
@@ -320,7 +320,7 @@ class Fintopio {
     };
 
     try {
-      const response = await axios.get(url, { headers });
+      const response = await this.axios_api.get(url, { headers });
       return response.data;
     } catch (error) {
       this.log(`Error fetching task state: ${error.message}`, "red");
@@ -337,7 +337,7 @@ class Fintopio {
       origin: "https://fintopio-tg.fintopio.com",
     };
     try {
-      await axios.post(url, {}, { headers });
+      await this.axios_api.post(url, {}, { headers });
       this.log(`Starting task ${slug}!`, "green");
     } catch (error) {
       this.log(`Error starting task: ${error.message}`, "red");
@@ -353,7 +353,7 @@ class Fintopio {
       origin: "https://fintopio-tg.fintopio.com",
     };
     try {
-      await axios.post(url, {}, { headers });
+      await this.axios_api.post(url, {}, { headers });
       this.log(
         `Task ${slug} complete, reward ${rewardAmount} diamonds!`,
         "green"
